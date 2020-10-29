@@ -14,7 +14,13 @@ abstract class BaseActivity<out P : BasePresenter<BaseActivity<P>>> : AppCompatA
     final override val presenter: P
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(getLayoutId())
+        initData()
     }
+
+    abstract fun initData()
+
+    abstract fun getLayoutId(): Int
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
