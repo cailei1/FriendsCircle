@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.framework.base.BaseActivity
 import com.example.framework.base.BaseUIActivity
+import com.example.friendscircle.adapter.NineAdapter
 import com.example.friendscircle.adapter.TweetsAdapter
 import com.example.friendscircle.ext.no
 import com.example.friendscircle.ext.otherwise
@@ -19,6 +20,7 @@ import com.example.friendscircle.model.UserInfo
 import com.example.friendscircle.presenter.MainPresenter
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.item_tweets.*
 import okhttp3.internal.and
 import java.util.Collections.addAll
 import kotlin.math.abs
@@ -42,8 +44,11 @@ class MainActivity : BaseUIActivity<MainPresenter>() {
 
     fun successBackFriendsInfo(friendsInfo: FriendsInfo?) {
         friendsInfo.isNullOrEmpty().no {
+          val filter=  friendsInfo?.filter {
+                it.sender!=null&&(it.content!=null||it.images!=null)
+            }
             this.friendInfo?.clear()
-            this.friendInfo?.addAll(friendsInfo as Collection<FriendsInfoItem>)
+            this.friendInfo?.addAll(filter as Collection<FriendsInfoItem>)
             tweetAdapter.notifyDataSetChanged()
         }.otherwise {
 
@@ -61,38 +66,41 @@ class MainActivity : BaseUIActivity<MainPresenter>() {
     }
 
     private fun setAppbarListener() {
-        appBar.addOnOffsetChangedListener(object : AppBarLayout.OnOffsetChangedListener {
-            override fun onOffsetChanged(appBarLayout: AppBarLayout?, y: Int) {
-                var appBarHeight = appBarLayout?.totalScrollRange
-//                Log.e("appBarY", "y : $y  ,  appBarHeight : $appBarHeight")
-                var distance = appBarHeight?.minus(abs(y))
-                if (distance != null) {
-                    if (distance == appBarHeight || distance > toolbarHeight) {
-                        setToolBarColor(Color.WHITE)
-                    } else if (distance < toolbarHeight) {
-                        percent = ((toolbarHeight.minus(distance).toFloat()).div(toolbarHeight))
-                        Log.e(
-                            "appBarY",
-                            "toolbarHeight $toolbarHeight distance : ${((toolbarHeight.minus(
+        appBar.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { appBarLayout, y ->
+            var appBarHeight = appBarLayout?.totalScrollRange
+            //                Log.e("appBarY", "y : $y  ,  appBarHeight : $appBarHeight")
+            var distance = appBarHeight?.minus(abs(y))
+            if (distance != null) {
+                if (distance == appBarHeight || distance > toolbarHeight) {
+                    setToolBarColor(Color.WHITE)
+                } else if (distance < toolbarHeight && distance > 0) {
+                    percent = ((toolbarHeight.minus(distance).toFloat()).div(toolbarHeight))
+                    Log.e(
+                        "appBarY",
+                        "toolbarHeight $toolbarHeight distance : ${
+                            ((toolbarHeight.minus(
                                 distance
-                            )).div(toolbarHeight))} percent : $percent alpha : ${a}"
+                            )).div(toolbarHeight))
+                        } percent : $percent alpha : ${a}"
+                    )
+                    setToolBarColor(
+                        Color.argb(
+                            (a * percent.toFloat()).toInt(),
+                            COLOR_BLACK.and(0x00ff0000).shr(16),
+                            COLOR_BLACK.and(0x0000ff00).shr(8),
+                            COLOR_BLACK.and(0x000000ff)
                         )
-                        setToolBarColor(
-                            Color.argb(
-                                (a * percent.toFloat()).toInt(),
-                                COLOR_BLACK.and(0x00ff0000).shr(16),
-                                COLOR_BLACK.and(0x0000ff00).shr(8),
-                                COLOR_BLACK.and(0x000000ff)
-                            )
-                        )
-                    }
+                    )
+                    toolbar_layout.title = ""
+                } else if (distance == 0) {
+                    toolbar_layout.title = "朋友圈"
                 }
             }
-
         })
     }
 
     private fun initToolbar() {
+        toolbar.title = ""
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         setToolBarColor(Color.WHITE)
